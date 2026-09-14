@@ -1,6 +1,7 @@
 /**
- * Artist thumbnail lookup. iTunes Search API first (album artwork), Wikipedia summary
- * thumbnail as fallback. No API key. Browser fetch (both send Access-Control-Allow-Origin: *).
+ * Artist helpers: billed-name split, Spotify search URLs, thumbnail lookup.
+ * iTunes Search API first (album artwork), Wikipedia summary thumbnail as fallback.
+ * No API key. Browser fetch (both send Access-Control-Allow-Origin: *).
  */
 (function (root) {
   "use strict";
@@ -8,15 +9,69 @@
   const ART_CACHE_KEY = "chicago-music-shows.artist-art";
   const ART_CACHE_MAX = 200;
 
+  /** Same split as first-billed thumbs: ` / ` or comma. */
+  const ARTIST_SPLIT = /\s+\/\s+|,\s+/;
+  const ARTIST_SPLIT_CAPTURE = /(\s+\/\s+|,\s+)/;
+
+  /**
+   * Individual names from a billed-artists string.
+   * @param {string} artists
+   * @returns {string[]}
+   */
+  function splitArtists(artists) {
+    const raw = String(artists == null ? "" : artists).trim();
+    if (!raw) return [];
+    return raw.split(ARTIST_SPLIT).map(function (n) {
+      return n.trim();
+    }).filter(Boolean);
+  }
+
   /**
    * First billed artist from a show's artists string.
    * @param {string} artists
    * @returns {string}
    */
   function primaryArtist(artists) {
-    const raw = String(artists == null ? "" : artists).trim();
-    if (!raw) return "";
-    return raw.split(/\s+\/\s+|,\s+/)[0].trim();
+    return splitArtists(artists)[0] || "";
+  }
+
+  /**
+   * Spotify search URL for one artist. No API key; the visitor is not asked to log in.
+   * Profile IDs would need the Web API (client secret stays off this static site).
+   * @param {string} artist
+   * @returns {string} empty when the name is blank
+   */
+  function spotifySearchUrl(artist) {
+    const name = String(artist == null ? "" : artist).trim();
+    if (!name) return "";
+    return "https://open.spotify.com/search/" + encodeURIComponent(name);
+  }
+
+  /**
+   * Names and original separators so each artist can be its own Spotify link.
+   * @param {string} artists
+   * @returns {{type: string, text: string, name?: string, href?: string}[]}
+   */
+  function artistSpotifySegments(artists) {
+    const raw = String(artists == null ? "" : artists);
+    if (!raw) return [];
+    const parts = raw.split(ARTIST_SPLIT_CAPTURE);
+    const segs = [];
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      if (i % 2 === 1) {
+        segs.push({ type: "sep", text: part });
+        continue;
+      }
+      const name = part.trim();
+      const href = name ? spotifySearchUrl(name) : "";
+      if (href) {
+        segs.push({ type: "artist", text: part, name: name, href: href });
+      } else if (part) {
+        segs.push({ type: "sep", text: part });
+      }
+    }
+    return segs;
   }
 
   function itunesSearchUrl(artist) {
@@ -106,7 +161,10 @@
   const api = {
     ART_CACHE_KEY: ART_CACHE_KEY,
     ART_CACHE_MAX: ART_CACHE_MAX,
+    splitArtists: splitArtists,
     primaryArtist: primaryArtist,
+    spotifySearchUrl: spotifySearchUrl,
+    artistSpotifySegments: artistSpotifySegments,
     itunesSearchUrl: itunesSearchUrl,
     wikipediaSummaryUrl: wikipediaSummaryUrl,
     artworkFromItunesJson: artworkFromItunesJson,
