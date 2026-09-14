@@ -17,6 +17,8 @@
 | Done | Multi-artist bills: each name is its own link (` / ` or comma, same as thumbs) |
 | Done | No Spotify Client Secret in the frontend; search URLs only |
 | — | Refactor: `primaryArtist` now uses shared `splitArtists` |
+| Done | Scraper window through end of next calendar year (at least 2027-12-31) |
+| Done | Unit tests for `end_date_for_window` and 2027 merge include/exclude |
 
 ## Next
 

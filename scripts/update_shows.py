@@ -11,9 +11,9 @@ Output:
   data/shows.json  — list of show objects
   data/meta.json   — last_updated, show_count, note
 
-Date window: from today through 2026-12-31, or if today is after ~Oct 1 of a
-year and we are near year-end, extend +90 days past year end (for now the
-explicit end is 2026-12-31 as requested).
+Date window: from today through end of next calendar year (at least
+2027-12-31). If today is within ~90 days of the current year's Dec 31, also
+extend +90 days from today so the window can peek past year-end.
 """
 
 from __future__ import annotations
@@ -45,13 +45,23 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
+# Listings should include the following calendar year when sources publish it.
+WINDOW_END_FLOOR = date(2027, 12, 31)
+
+
 def end_date_for_window(today: date) -> date:
-    """Through end of year, or +90 days if within ~90 days of year end."""
-    year_end = date(today.year, 12, 31)
-    if (year_end - today).days <= 90:
-        return today + timedelta(days=90)
-    # Project requirement: for now through 2026-12-31
-    return max(year_end, date(2026, 12, 31))
+    """Through end of next calendar year (at least 2027-12-31).
+
+    Near the current year's Dec 31, also extend +90 days from today so the
+    window does not collapse at year-end. With a next-year floor that extra
+    peek is usually already covered.
+    """
+    next_year_end = date(today.year + 1, 12, 31)
+    end = max(next_year_end, WINDOW_END_FLOOR)
+    current_year_end = date(today.year, 12, 31)
+    if (current_year_end - today).days <= 90:
+        end = max(end, today + timedelta(days=90))
+    return end
 
 
 def http_get(url: str) -> str | None:
@@ -447,8 +457,6 @@ def main() -> int:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     today = date.today()
     end = end_date_for_window(today)
-    # Explicit project window: through 2026-12-31 at minimum
-    end = max(end, date(2026, 12, 31))
     log(f"Update window: {today.isoformat()} .. {end.isoformat()}")
 
     existing = load_existing()
