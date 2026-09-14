@@ -4,6 +4,7 @@
   const venueSelect = document.getElementById("venue-filter");
   const fromDateInput = document.getElementById("from-date");
   const toDateInput = document.getElementById("to-date");
+  const favoritesOnlyInput = document.getElementById("favorites-only");
   const resetBtn = document.getElementById("reset-filters");
   const statusEl = document.getElementById("status");
   const tbody = document.getElementById("shows-body");
@@ -12,8 +13,12 @@
   const filterShows = window.ShowsFilter.filterShows;
   const selectedVenueValues = window.ShowsFilter.selectedVenueValues;
   const clearVenueSelection = window.ShowsFilter.clearVenueSelection;
+  const showKey = window.ShowsFilter.showKey;
+  const readFavoriteKeys = window.ShowsFilter.readFavoriteKeys;
+  const writeFavoriteKeys = window.ShowsFilter.writeFavoriteKeys;
 
   let allShows = [];
+  let favoriteKeys = readFavoriteKeys(window.localStorage);
 
   function todayISO() {
     const d = new Date();
@@ -51,12 +56,27 @@
     });
   }
 
+  function makeFavButton(show) {
+    const key = showKey(show);
+    const isFav = favoriteKeys.has(key);
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "fav-btn";
+    btn.dataset.showKey = key;
+    btn.setAttribute("aria-pressed", isFav ? "true" : "false");
+    btn.setAttribute("aria-label", isFav ? "Remove from favorites" : "Add to favorites");
+    btn.textContent = isFav ? "★" : "☆";
+    return btn;
+  }
+
   function visibleShows() {
     return filterShows(
       allShows,
       selectedVenueValues(venueSelect),
       fromDateInput.value || todayISO(),
-      toDateInput.value || ""
+      toDateInput.value || "",
+      favoritesOnlyInput.checked,
+      favoriteKeys
     );
   }
 
@@ -72,21 +92,29 @@
 
     shows.forEach(function (s) {
       const tr = document.createElement("tr");
-      tr.innerHTML =
+      const favTd = document.createElement("td");
+      favTd.appendChild(makeFavButton(s));
+      tr.appendChild(favTd);
+      tr.insertAdjacentHTML(
+        "beforeend",
         "<td>" + escapeHtml(s.date) + "</td>" +
         "<td>" + escapeHtml(s.doors_or_time) + "</td>" +
         "<td>" + escapeHtml(s.venue) + "</td>" +
         "<td>" + escapeHtml(s.artists) + "</td>" +
-        "<td>" + linkCell(s.ticket_url) + "</td>";
+        "<td>" + linkCell(s.ticket_url) + "</td>"
+      );
       frag.appendChild(tr);
 
       const article = document.createElement("article");
-      article.innerHTML =
+      article.appendChild(makeFavButton(s));
+      const body = document.createElement("div");
+      body.innerHTML =
         "<p><strong>Date:</strong> " + escapeHtml(s.date) + "</p>" +
         "<p><strong>Time:</strong> " + escapeHtml(s.doors_or_time) + "</p>" +
         "<p><strong>Venue:</strong> " + escapeHtml(s.venue) + "</p>" +
         "<p><strong>Artists:</strong> " + escapeHtml(s.artists) + "</p>" +
         "<p><strong>Link:</strong> " + (s.ticket_url ? linkCell(s.ticket_url) : "—") + "</p>";
+      article.appendChild(body);
       cardsFrag.appendChild(article);
     });
 
@@ -96,17 +124,35 @@
     cardsEl.hidden = false;
   }
 
+  function toggleFavorite(key) {
+    if (!key) return;
+    if (favoriteKeys.has(key)) favoriteKeys.delete(key);
+    else favoriteKeys.add(key);
+    writeFavoriteKeys(window.localStorage, favoriteKeys);
+    render();
+  }
+
+  function onFavClick(e) {
+    const btn = e.target.closest(".fav-btn");
+    if (!btn) return;
+    toggleFavorite(btn.dataset.showKey);
+  }
+
   function resetFilters() {
     clearVenueSelection(venueSelect);
     fromDateInput.value = todayISO();
     toDateInput.value = "";
+    favoritesOnlyInput.checked = false;
     render();
   }
 
   venueSelect.addEventListener("change", render);
   fromDateInput.addEventListener("change", render);
   toDateInput.addEventListener("change", render);
+  favoritesOnlyInput.addEventListener("change", render);
   resetBtn.addEventListener("click", resetFilters);
+  tbody.addEventListener("click", onFavClick);
+  cardsEl.addEventListener("click", onFavClick);
 
   Promise.all([
     fetch("./data/shows.json").then(function (r) {

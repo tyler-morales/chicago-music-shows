@@ -1,13 +1,20 @@
 # Chicago Music Shows (static site)
 
-Bare-bones static listing of upcoming Chicago music shows, filterable by venue (multi-select) and date. Data comes from a best-effort scrape of public aggregators (similar to concerts50 / bandsintown / songkick). **Coverage is incomplete** and not authoritative.
+Bare-bones static listing of upcoming Chicago music shows, filterable by venue (multi-select), date, and starred favorites. Data comes from a best-effort scrape of public aggregators (similar to concerts50 / bandsintown / songkick). **Coverage is incomplete** and not authoritative.
 
 ## Using the filters
 
 - **Venues:** native multi-select. Click (or tap) a venue to select it; hold **Cmd** (Mac) or **Ctrl** (Windows) to add more. On many phones, tap additional rows to include them. Leave the list empty to show **all venues**.
 - **From / To:** inclusive date range. From defaults to today; To is optional.
 - Venue set and date range combine with **AND**. Multiple venues combine with **OR** (a show matches if its venue is any of the selected ones).
-- **Reset** clears the venue selection (back to all) and restores the date defaults.
+- **Reset** clears the venue selection (back to all), turns off Favorites only, and restores the date defaults. Saved stars are kept.
+
+## Favorites
+
+- Click **☆** on a row or card to star a show (**★**). Click again to unstar.
+- Stars are stored in this browser (`localStorage`); there is no account.
+- Identity is `date + venue + artists + ticket_url`, so the same listing stays starred after a data refresh.
+- Check **Favorites only** to list starred shows. That filter still **AND**s with the venue multi-select and date range.
 
 ## Local preview
 
@@ -63,9 +70,10 @@ python3 scripts/update_shows.py
 | Path | Role |
 |------|------|
 | `index.html` | Page shell |
-| `filter.js` | Pure venue/date filter helpers (browser + Node tests) |
-| `app.js` | Load JSON, wire filters, table + mobile cards |
-| `tests/filter.test.js` | Success/failure unit tests (`node tests/filter.test.js`) |
+| `filter.js` | Pure venue/date/favorites filter helpers (browser + Node tests) |
+| `app.js` | Load JSON, wire filters + favorites, table + mobile cards |
+| `tests/filter.test.js` | Venue/date filter tests (`node tests/filter.test.js`) |
+| `tests/favorites.test.js` | Favorite key/storage/filter tests (`node tests/favorites.test.js`) |
 | `styles.css` | Minimal responsive layout only |
 | `data/shows.json` | Show records |
 | `data/meta.json` | `last_updated` timestamp + notes |

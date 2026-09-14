@@ -29,6 +29,11 @@
     <label for="to-date">To date (optional):</label>
     <input type="date" id="to-date">
 
+    <label class="favorites-only-label" for="favorites-only">
+      <input type="checkbox" id="favorites-only">
+      Favorites only
+    </label>
+
     <button type="button" id="reset-filters">Reset</button>
   </section>
 
@@ -38,6 +43,7 @@
     <table id="shows-table">
       <thead>
         <tr>
+          <th scope="col">Favorite</th>
           <th scope="col">Date</th>
           <th scope="col">Time</th>
           <th scope="col">Venue</th>
