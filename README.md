@@ -82,6 +82,7 @@ python3 scripts/update_shows.py
 ### Notes on the scraper
 
 - Best-effort / incomplete: aggregator HTML and protections change often.
+- Songkick Chicago calendar pages are followed (`?page=N`, cap 40) so dates into 2027 can be picked up when listed.
 - Do not treat the list as complete or official.
 - Existing `data/shows.json` seeded content is preserved/merged when scrapes partially succeed.
 
