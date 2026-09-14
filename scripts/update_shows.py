@@ -11,9 +11,9 @@ Output:
   data/shows.json  — list of show objects
   data/meta.json   — last_updated, show_count, note
 
-Date window: from today through 2026-12-31, or if today is after ~Oct 1 of a
-year and we are near year-end, extend +90 days past year end (for now the
-explicit end is 2026-12-31 as requested).
+Date window: from today through end of next calendar year (at least
+2027-12-31). If today is within ~90 days of the current year's Dec 31, also
+extend +90 days from today so the window can peek past year-end.
 """
 
 from __future__ import annotations
@@ -45,13 +45,23 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
+# Listings should include the following calendar year when sources publish it.
+WINDOW_END_FLOOR = date(2027, 12, 31)
+
+
 def end_date_for_window(today: date) -> date:
-    """Through end of year, or +90 days if within ~90 days of year end."""
-    year_end = date(today.year, 12, 31)
-    if (year_end - today).days <= 90:
-        return today + timedelta(days=90)
-    # Project requirement: for now through 2026-12-31
-    return max(year_end, date(2026, 12, 31))
+    """Through end of next calendar year (at least 2027-12-31).
+
+    Near the current year's Dec 31, also extend +90 days from today so the
+    window does not collapse at year-end. With a next-year floor that extra
+    peek is usually already covered.
+    """
+    next_year_end = date(today.year + 1, 12, 31)
+    end = max(next_year_end, WINDOW_END_FLOOR)
+    current_year_end = date(today.year, 12, 31)
+    if (current_year_end - today).days <= 90:
+        end = max(end, today + timedelta(days=90))
+    return end
 
 
 def http_get(url: str) -> str | None:
@@ -237,107 +247,133 @@ def scrape_concerts50() -> list[dict[str, Any]]:
     return shows
 
 
-def scrape_songkick_metro() -> list[dict[str, Any]]:
-    """Songkick metro Chicago page (HTML scrape)."""
+SONGKICK_CALENDAR = "https://www.songkick.com/metro-areas/9426-us-chicago/calendar"
+SONGKICK_FALLBACK = "https://www.songkick.com/metro-areas/9426-us-chicago"
+SONGKICK_MAX_PAGES = 40
+
+
+def songkick_listed_pages(html: str) -> list[int]:
+    """Page numbers linked from a Songkick metro calendar listing."""
+    return sorted({int(x) for x in re.findall(r"calendar\?page=(\d+)", html)})
+
+
+def parse_songkick_html(html: str) -> list[dict[str, Any]]:
+    """Parse one Songkick calendar HTML page (microformat + JSON-LD)."""
     shows: list[dict[str, Any]] = []
-    urls = [
-        "https://www.songkick.com/metro-areas/9426-us-chicago/calendar",
-        "https://www.songkick.com/metro-areas/9426-us-chicago",
-    ]
-    for url in urls:
-        log(f"Trying songkick: {url}")
-        html = http_get(url)
-        if not html:
+    for m in re.finditer(
+        r'<time[^>]*datetime="(\d{4}-\d{2}-\d{2})[^"]*"[^>]*>.*?'
+        r'(?:artists?\s*strong[^>]*>|class="[^"]*artists?[^"]*"[^>]*>)\s*([^<]{2,120})',
+        html,
+        re.I | re.S,
+    ):
+        d, artists = m.group(1), re.sub(r"\s+", " ", m.group(2)).strip()
+        window = html[m.start() : m.start() + 1200]
+        venue_m = re.search(
+            r'class="[^"]*venue[^"]*"[^>]*>\s*<[^>]+>\s*([^<]{2,80})',
+            window,
+            re.I,
+        ) or re.search(r'venue[^\n]{0,40}>\s*([^<]{2,80})', window, re.I)
+        venue = venue_m.group(1).strip() if venue_m else ""
+        link_m = re.search(r'href="(/concerts/\d+[^"]*)"', window)
+        ticket_url = (
+            "https://www.songkick.com" + link_m.group(1) if link_m else ""
+        )
+        shows.append(
+            {
+                "date": d,
+                "doors_or_time": "",
+                "venue": venue,
+                "venue_address": "",
+                "artists": artists,
+                "ticket_url": ticket_url,
+                "source": "songkick",
+                "notes": "",
+            }
+        )
+    for m in re.finditer(
+        r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>',
+        html,
+        re.I | re.S,
+    ):
+        try:
+            payload = json.loads(m.group(1))
+        except json.JSONDecodeError:
             continue
-        # microformat / event listings
-        for m in re.finditer(
-            r'<time[^>]*datetime="(\d{4}-\d{2}-\d{2})[^"]*"[^>]*>.*?'
-            r'(?:artists?\s*strong[^>]*>|class="[^"]*artists?[^"]*"[^>]*>)\s*([^<]{2,120})',
-            html,
-            re.I | re.S,
-        ):
-            d, artists = m.group(1), re.sub(r"\s+", " ", m.group(2)).strip()
-            window = html[m.start() : m.start() + 1200]
-            venue_m = re.search(
-                r'class="[^"]*venue[^"]*"[^>]*>\s*<[^>]+>\s*([^<]{2,80})',
-                window,
-                re.I,
-            ) or re.search(r'venue[^\n]{0,40}>\s*([^<]{2,80})', window, re.I)
-            venue = venue_m.group(1).strip() if venue_m else ""
-            link_m = re.search(r'href="(/concerts/\d+[^"]*)"', window)
-            ticket_url = (
-                "https://www.songkick.com" + link_m.group(1) if link_m else ""
-            )
+        items = payload if isinstance(payload, list) else [payload]
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            graph = item.get("@graph")
+            if isinstance(graph, list):
+                items.extend(graph)
+            if item.get("@type") not in ("MusicEvent", "Event", ["MusicEvent"], ["Event"]):
+                t = item.get("@type")
+                if t not in ("MusicEvent", "Event") and t != ["MusicEvent"]:
+                    continue
+            start = (item.get("startDate") or "")[:10]
+            if not re.match(r"^\d{4}-\d{2}-\d{2}$", start):
+                continue
+            name = item.get("name") or ""
+            loc = item.get("location") or {}
+            if isinstance(loc, list) and loc:
+                loc = loc[0]
+            venue = ""
+            addr = ""
+            if isinstance(loc, dict):
+                venue = loc.get("name") or ""
+                a = loc.get("address") or {}
+                if isinstance(a, dict):
+                    addr = ", ".join(
+                        x for x in [
+                            a.get("streetAddress"),
+                            a.get("addressLocality"),
+                            a.get("addressRegion"),
+                            a.get("postalCode"),
+                        ]
+                        if x
+                    )
+            url = item.get("url") or ""
             shows.append(
                 {
-                    "date": d,
-                    "doors_or_time": "",
+                    "date": start,
+                    "doors_or_time": (item.get("startDate") or "")[11:16],
                     "venue": venue,
-                    "venue_address": "",
-                    "artists": artists,
-                    "ticket_url": ticket_url,
+                    "venue_address": addr,
+                    "artists": name,
+                    "ticket_url": url if isinstance(url, str) else "",
                     "source": "songkick",
                     "notes": "",
                 }
             )
-        # Fallback: JSON-LD
-        for m in re.finditer(
-            r'<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>',
-            html,
-            re.I | re.S,
-        ):
-            try:
-                payload = json.loads(m.group(1))
-            except json.JSONDecodeError:
-                continue
-            items = payload if isinstance(payload, list) else [payload]
-            for item in items:
-                if not isinstance(item, dict):
-                    continue
-                graph = item.get("@graph")
-                if isinstance(graph, list):
-                    items.extend(graph)
-                if item.get("@type") not in ("MusicEvent", "Event", ["MusicEvent"], ["Event"]):
-                    t = item.get("@type")
-                    if t not in ("MusicEvent", "Event") and t != ["MusicEvent"]:
-                        continue
-                start = (item.get("startDate") or "")[:10]
-                if not re.match(r"^\d{4}-\d{2}-\d{2}$", start):
-                    continue
-                name = item.get("name") or ""
-                loc = item.get("location") or {}
-                if isinstance(loc, list) and loc:
-                    loc = loc[0]
-                venue = ""
-                addr = ""
-                if isinstance(loc, dict):
-                    venue = loc.get("name") or ""
-                    a = loc.get("address") or {}
-                    if isinstance(a, dict):
-                        addr = ", ".join(
-                            x for x in [
-                                a.get("streetAddress"),
-                                a.get("addressLocality"),
-                                a.get("addressRegion"),
-                                a.get("postalCode"),
-                            ]
-                            if x
-                        )
-                url = item.get("url") or ""
-                shows.append(
-                    {
-                        "date": start,
-                        "doors_or_time": (item.get("startDate") or "")[11:16],
-                        "venue": venue,
-                        "venue_address": addr,
-                        "artists": name,
-                        "ticket_url": url if isinstance(url, str) else "",
-                        "source": "songkick",
-                        "notes": "",
-                    }
-                )
-        if shows:
-            log(f"  songkick parsed ~{len(shows)} candidates")
+    return shows
+
+
+def scrape_songkick_metro() -> list[dict[str, Any]]:
+    """Songkick Chicago calendar, following page links so 2027 dates can appear."""
+    shows: list[dict[str, Any]] = []
+    last_page = 1
+    for page in range(1, SONGKICK_MAX_PAGES + 1):
+        url = SONGKICK_CALENDAR if page == 1 else f"{SONGKICK_CALENDAR}?page={page}"
+        log(f"Trying songkick: {url}")
+        html = http_get(url)
+        if not html:
+            if page == 1:
+                log(f"Trying songkick: {SONGKICK_FALLBACK}")
+                html = http_get(SONGKICK_FALLBACK)
+                if html:
+                    shows.extend(parse_songkick_html(html))
+                    log(f"  songkick parsed ~{len(shows)} candidates")
+            break
+        batch = parse_songkick_html(html)
+        shows.extend(batch)
+        listed = songkick_listed_pages(html)
+        if listed:
+            last_page = max(last_page, max(listed))
+        log(
+            f"  songkick page {page} parsed ~{len(batch)} candidates "
+            f"(last_page={last_page})"
+        )
+        if page >= last_page:
             break
         time.sleep(1)
     return shows
@@ -447,8 +483,6 @@ def main() -> int:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     today = date.today()
     end = end_date_for_window(today)
-    # Explicit project window: through 2026-12-31 at minimum
-    end = max(end, date(2026, 12, 31))
     log(f"Update window: {today.isoformat()} .. {end.isoformat()}")
 
     existing = load_existing()

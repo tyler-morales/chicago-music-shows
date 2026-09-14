@@ -1,6 +1,6 @@
 # Chicago Music Shows (static site)
 
-Bare-bones static listing of upcoming Chicago music shows, filterable by venue (multi-select), date, and starred favorites. Data comes from a best-effort scrape of public aggregators (similar to concerts50 / bandsintown / songkick). **Coverage is incomplete** and not authoritative.
+Bare-bones static listing of upcoming Chicago music shows, filterable by venue (multi-select), date, and starred favorites. Data comes from a best-effort scrape of public aggregators (similar to concerts50 / bandsintown / songkick). **Coverage is incomplete** and not authoritative. The refresh window runs from today through **end of next calendar year** (at least **2027-12-31**); 2027 rows appear only when a source actually lists them.
 
 ## Using the filters
 
@@ -68,7 +68,7 @@ If the repo is private, enable Pages according to your plan; public repos work o
 Workflow: `.github/workflows/update-shows.yml`
 
 - Runs on a daily cron (`15 12 * * *` UTC) and on **workflow_dispatch** (manual).
-- Runs `scripts/update_shows.py`, which refreshes `data/shows.json` for dates from **today** through **2026-12-31** (or +90 days past year-end when near Dec 31).
+- Runs `scripts/update_shows.py`, which refreshes `data/shows.json` for dates from **today** through **end of next calendar year** (at least **2027-12-31**; +90 days past current year-end when within ~90 days of Dec 31). Only dates the scraper actually finds are stored — it does not invent 2027 rows.
 - Uses only the Python standard library.
 - On network/parse failure: **leaves existing data**, writes a note into `data/meta.json`, and **exits 0**.
 - If JSON files change, the workflow commits and pushes with `permissions: contents: write`.
@@ -82,6 +82,7 @@ python3 scripts/update_shows.py
 ### Notes on the scraper
 
 - Best-effort / incomplete: aggregator HTML and protections change often.
+- Songkick Chicago calendar pages are followed (`?page=N`, cap 40) so dates into 2027 can be picked up when listed.
 - Do not treat the list as complete or official.
 - Existing `data/shows.json` seeded content is preserved/merged when scrapes partially succeed.
 
@@ -96,6 +97,7 @@ python3 scripts/update_shows.py
 | `tests/filter.test.js` | Venue/date filter tests (`node tests/filter.test.js`) |
 | `tests/favorites.test.js` | Favorite key/storage/filter tests (`node tests/favorites.test.js`) |
 | `tests/artist-art.test.js` | Artist parse/artwork/cache tests (`node tests/artist-art.test.js`) |
+| `tests/test_update_shows.py` | Scraper window + merge tests (`python3 tests/test_update_shows.py`) |
 | `styles.css` | Minimal responsive layout only |
 | `data/shows.json` | Show records |
 | `data/meta.json` | `last_updated` timestamp + notes |
