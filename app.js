@@ -17,6 +17,7 @@
   const readFavoriteKeys = window.ShowsFilter.readFavoriteKeys;
   const writeFavoriteKeys = window.ShowsFilter.writeFavoriteKeys;
   const primaryArtist = window.ArtistArt.primaryArtist;
+  const artistSpotifySegments = window.ArtistArt.artistSpotifySegments;
   const itunesSearchUrl = window.ArtistArt.itunesSearchUrl;
   const wikipediaSummaryUrl = window.ArtistArt.wikipediaSummaryUrl;
   const artworkFromItunesJson = window.ArtistArt.artworkFromItunesJson;
@@ -179,6 +180,28 @@
     });
   }
 
+  function appendArtistNames(parent, artists) {
+    const segs = artistSpotifySegments(artists);
+    if (!segs.length) {
+      parent.appendChild(document.createTextNode(artists == null ? "" : String(artists)));
+      return;
+    }
+    segs.forEach(function (seg) {
+      if (seg.type !== "artist" || !seg.href) {
+        parent.appendChild(document.createTextNode(seg.text));
+        return;
+      }
+      const a = document.createElement("a");
+      a.className = "artist-spotify";
+      a.href = seg.href;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = seg.text;
+      a.setAttribute("aria-label", (seg.name || seg.text.trim()) + " on Spotify");
+      parent.appendChild(a);
+    });
+  }
+
   function appendArtistCell(parent, artists, asParagraph) {
     const cell = document.createElement(asParagraph ? "p" : "td");
     if (asParagraph) {
@@ -187,7 +210,7 @@
       cell.appendChild(label);
     }
     cell.appendChild(makeArtistThumb(artists));
-    cell.appendChild(document.createTextNode(artists == null ? "" : String(artists)));
+    appendArtistNames(cell, artists);
     parent.appendChild(cell);
   }
 

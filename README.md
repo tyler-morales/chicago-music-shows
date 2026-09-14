@@ -26,6 +26,16 @@ Small thumbnails next to the artist name (table + mobile cards). Looked up in th
 
 Images lazy-load when a row/card is near the viewport. Successful (and failed) lookups are cached in `localStorage` (max 200 artists) so scrolling and reloads do not refetch everything.
 
+## Spotify links
+
+Artist names in the table and on mobile cards are links. Each name opens Spotify search in a new tab (`rel="noopener noreferrer"`):
+
+`https://open.spotify.com/search/<urlencoded artist>`
+
+Multi-artist bills use the same split as first-billed thumbnails: ` / ` or comma, and each name is its own link.
+
+No Spotify login and no API keys. The Web API needs a Client Secret, so this static GitHub Pages site does not call it from the browser. Search URLs are the baseline; they land on Spotify’s search results for that name (usually the artist is the top hit).
+
 ## Local preview
 
 Open `index.html` via a local static server (fetch needs HTTP, not `file://`):
@@ -81,8 +91,8 @@ python3 scripts/update_shows.py
 |------|------|
 | `index.html` | Page shell |
 | `filter.js` | Pure venue/date/favorites filter helpers (browser + Node tests) |
-| `artist-art.js` | Primary-artist parse + iTunes/Wikipedia artwork helpers |
-| `app.js` | Load JSON, wire filters + favorites + lazy artist thumbs |
+| `artist-art.js` | Artist split + Spotify search URLs + iTunes/Wikipedia artwork helpers |
+| `app.js` | Load JSON, wire filters + favorites + lazy artist thumbs + Spotify name links |
 | `tests/filter.test.js` | Venue/date filter tests (`node tests/filter.test.js`) |
 | `tests/favorites.test.js` | Favorite key/storage/filter tests (`node tests/favorites.test.js`) |
 | `tests/artist-art.test.js` | Artist parse/artwork/cache tests (`node tests/artist-art.test.js`) |

@@ -37,7 +37,8 @@ section[aria-label="Filters"] label {
 #venue-filter:focus,
 section[aria-label="Filters"] input:focus,
 section[aria-label="Filters"] button:focus,
-.fav-btn:focus {
+.fav-btn:focus,
+.artist-spotify:focus {
   outline: 2px solid Highlight;
   outline-offset: 2px;
 }

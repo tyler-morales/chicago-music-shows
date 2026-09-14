@@ -2,7 +2,10 @@
 
 const assert = require("assert");
 const {
+  splitArtists,
   primaryArtist,
+  spotifySearchUrl,
+  artistSpotifySegments,
   itunesSearchUrl,
   wikipediaSummaryUrl,
   artworkFromItunesJson,
@@ -31,12 +34,53 @@ function memoryStorage(seed) {
 {
   assert.strictEqual(primaryArtist("Bob Log III / Baron Von Future"), "Bob Log III");
   assert.strictEqual(primaryArtist("Ganser"), "Ganser");
+  assert.deepStrictEqual(splitArtists("Bob Log III / Baron Von Future"), [
+    "Bob Log III",
+    "Baron Von Future",
+  ]);
+  assert.deepStrictEqual(splitArtists("Austin Cash, Luke Callen, and Ultra-Violet Archer"), [
+    "Austin Cash",
+    "Luke Callen",
+    "and Ultra-Violet Archer",
+  ]);
+  assert.deepStrictEqual(splitArtists("Carla Dal Forno / Zelienople / Erik Kramer"), [
+    "Carla Dal Forno",
+    "Zelienople",
+    "Erik Kramer",
+  ]);
 }
 
 // Failure: empty / missing artists yield an empty primary name (no lookup).
 {
   assert.strictEqual(primaryArtist(""), "");
   assert.strictEqual(primaryArtist(null), "");
+  assert.deepStrictEqual(splitArtists(""), []);
+  assert.deepStrictEqual(splitArtists("   "), []);
+  assert.deepStrictEqual(splitArtists(null), []);
+}
+
+// Success: Spotify search URL is secret-free and encodes the artist name.
+{
+  assert.strictEqual(
+    spotifySearchUrl("Bob Log III"),
+    "https://open.spotify.com/search/Bob%20Log%20III"
+  );
+  const segs = artistSpotifySegments("Bob Log III / Baron Von Future");
+  assert.strictEqual(segs.length, 3);
+  assert.strictEqual(segs[0].type, "artist");
+  assert.strictEqual(segs[0].href, "https://open.spotify.com/search/Bob%20Log%20III");
+  assert.strictEqual(segs[1].type, "sep");
+  assert.strictEqual(segs[1].text, " / ");
+  assert.strictEqual(segs[2].name, "Baron Von Future");
+  assert.strictEqual(segs[2].href, "https://open.spotify.com/search/Baron%20Von%20Future");
+}
+
+// Failure: blank artist names are not Spotify links.
+{
+  assert.strictEqual(spotifySearchUrl(""), "");
+  assert.strictEqual(spotifySearchUrl("   "), "");
+  assert.deepStrictEqual(artistSpotifySegments(""), []);
+  assert.deepStrictEqual(artistSpotifySegments(null), []);
 }
 
 // Success: iTunes result with artworkUrl100.
