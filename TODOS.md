@@ -11,6 +11,8 @@
 | Done | Persist favorites in localStorage with date+venue+artists+ticket_url key |
 | Done | Favorites-only toggle ANDs with venue multi-select and date filters |
 | Done | Reset turns off Favorites only; does not wipe saved stars |
+| Done | Artist thumbnails (iTunes Search artwork, Wikipedia fallback) |
+| Done | Lazy-load thumbs + bounded localStorage cache (max 200) |
 | — | Refactor / deleted: none this change (favorites reuse `filterShows`) |
 
 ## Next

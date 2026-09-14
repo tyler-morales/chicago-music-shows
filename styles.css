@@ -63,6 +63,24 @@ section[aria-label="Filters"] button:focus,
   margin-bottom: 0.35rem;
 }
 
+.artist-thumb {
+  display: inline-block;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  object-fit: cover;
+  background: #eee;
+  border: 1px solid #ccc;
+  text-align: center;
+  line-height: 2.4rem;
+  font-size: 0.9rem;
+}
+
+img.artist-thumb {
+  line-height: 0;
+}
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

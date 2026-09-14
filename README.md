@@ -16,6 +16,16 @@ Bare-bones static listing of upcoming Chicago music shows, filterable by venue (
 - Identity is `date + venue + artists + ticket_url`, so the same listing stays starred after a data refresh.
 - Check **Favorites only** to list starred shows. That filter still **AND**s with the venue multi-select and date range.
 
+## Artist images
+
+Small thumbnails next to the artist name (table + mobile cards). Looked up in the browser, not stored in `data/shows.json`:
+
+1. **Apple iTunes Search API** album artwork for the first billed artist (` / ` or comma split).
+2. If that misses, **Wikipedia** page-summary thumbnail.
+3. If both miss or the image 404s, the row stays a letter placeholder.
+
+Images lazy-load when a row/card is near the viewport. Successful (and failed) lookups are cached in `localStorage` (max 200 artists) so scrolling and reloads do not refetch everything.
+
 ## Local preview
 
 Open `index.html` via a local static server (fetch needs HTTP, not `file://`):
@@ -71,9 +81,11 @@ python3 scripts/update_shows.py
 |------|------|
 | `index.html` | Page shell |
 | `filter.js` | Pure venue/date/favorites filter helpers (browser + Node tests) |
-| `app.js` | Load JSON, wire filters + favorites, table + mobile cards |
+| `artist-art.js` | Primary-artist parse + iTunes/Wikipedia artwork helpers |
+| `app.js` | Load JSON, wire filters + favorites + lazy artist thumbs |
 | `tests/filter.test.js` | Venue/date filter tests (`node tests/filter.test.js`) |
 | `tests/favorites.test.js` | Favorite key/storage/filter tests (`node tests/favorites.test.js`) |
+| `tests/artist-art.test.js` | Artist parse/artwork/cache tests (`node tests/artist-art.test.js`) |
 | `styles.css` | Minimal responsive layout only |
 | `data/shows.json` | Show records |
 | `data/meta.json` | `last_updated` timestamp + notes |
