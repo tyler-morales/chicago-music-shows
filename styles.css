@@ -36,7 +36,8 @@ section[aria-label="Filters"] label {
 
 #venue-filter:focus,
 section[aria-label="Filters"] input:focus,
-section[aria-label="Filters"] button:focus {
+section[aria-label="Filters"] button:focus,
+.fav-btn:focus {
   outline: 2px solid Highlight;
   outline-offset: 2px;
 }
@@ -45,6 +46,39 @@ section[aria-label="Filters"] button:focus {
   flex-basis: 100%;
   margin: 0;
   font-size: 0.9em;
+}
+
+.favorites-only-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.fav-btn {
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+}
+
+.cards article .fav-btn {
+  margin-bottom: 0.35rem;
+}
+
+.artist-thumb {
+  display: inline-block;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+  object-fit: cover;
+  background: #eee;
+  border: 1px solid #ccc;
+  text-align: center;
+  line-height: 2.4rem;
+  font-size: 0.9rem;
+}
+
+img.artist-thumb {
+  line-height: 0;
 }
 
 .table-wrap {
