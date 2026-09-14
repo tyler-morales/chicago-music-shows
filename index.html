@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chicago Music Shows</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Chicago Music Shows</h1>
+    <p>Upcoming shows scraped from public aggregators. Data is incomplete.</p>
+  </header>
+
+  <section aria-label="Filters">
+    <label for="venue-filter">Venue:</label>
+    <select id="venue-filter">
+      <option value="">All venues</option>
+    </select>
+
+    <label for="from-date">From date:</label>
+    <input type="date" id="from-date">
+
+    <label for="to-date">To date (optional):</label>
+    <input type="date" id="to-date">
+
+    <button type="button" id="reset-filters">Reset</button>
+  </section>
+
+  <p id="status" aria-live="polite">Loading…</p>
+
+  <div class="table-wrap">
+    <table id="shows-table">
+      <thead>
+        <tr>
+          <th scope="col">Date</th>
+          <th scope="col">Time</th>
+          <th scope="col">Venue</th>
+          <th scope="col">Artists</th>
+          <th scope="col">Link</th>
+        </tr>
+      </thead>
+      <tbody id="shows-body"></tbody>
+    </table>
+  </div>
+
+  <div id="shows-cards" class="cards" hidden></div>
+
+  <footer>
+    <p>
+      Data is an incomplete aggregator scrape (concerts50 / bandsintown / songkick and similar).
+      Not exhaustive; listings may be wrong, missing, or outdated.
+      Last updated: <time id="last-updated">unknown</time>.
+    </p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
