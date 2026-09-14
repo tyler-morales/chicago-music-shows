@@ -21,6 +21,32 @@ section[aria-label="Filters"] label {
   margin-right: 0.25rem;
 }
 
+.filter-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.25rem 0.5rem;
+  flex: 1 1 16rem;
+}
+
+#venue-filter {
+  min-width: 14rem;
+  min-height: 8rem;
+}
+
+#venue-filter:focus,
+section[aria-label="Filters"] input:focus,
+section[aria-label="Filters"] button:focus {
+  outline: 2px solid Highlight;
+  outline-offset: 2px;
+}
+
+#venue-filter-hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.9em;
+}
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -67,6 +93,10 @@ footer {
   section[aria-label="Filters"] input[type="date"],
   section[aria-label="Filters"] button {
     width: 100%;
+  }
+
+  #venue-filter {
+    min-height: 10rem;
   }
 
   .table-wrap {

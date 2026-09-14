@@ -9,6 +9,9 @@
   const tbody = document.getElementById("shows-body");
   const cardsEl = document.getElementById("shows-cards");
   const lastUpdatedEl = document.getElementById("last-updated");
+  const filterShows = window.ShowsFilter.filterShows;
+  const selectedVenueValues = window.ShowsFilter.selectedVenueValues;
+  const clearVenueSelection = window.ShowsFilter.clearVenueSelection;
 
   let allShows = [];
 
@@ -48,22 +51,17 @@
     });
   }
 
-  function filteredShows() {
-    const venue = venueSelect.value;
-    const from = fromDateInput.value || todayISO();
-    const to = toDateInput.value || "";
-
-    return allShows.filter(function (s) {
-      const date = s.date || "";
-      if (from && date < from) return false;
-      if (to && date > to) return false;
-      if (venue && (s.venue || "") !== venue) return false;
-      return true;
-    });
+  function visibleShows() {
+    return filterShows(
+      allShows,
+      selectedVenueValues(venueSelect),
+      fromDateInput.value || todayISO(),
+      toDateInput.value || ""
+    );
   }
 
   function render() {
-    const shows = filteredShows();
+    const shows = visibleShows();
     statusEl.textContent = shows.length + " show(s) shown (of " + allShows.length + " loaded).";
 
     tbody.innerHTML = "";
@@ -99,7 +97,7 @@
   }
 
   function resetFilters() {
-    venueSelect.value = "";
+    clearVenueSelection(venueSelect);
     fromDateInput.value = todayISO();
     toDateInput.value = "";
     render();

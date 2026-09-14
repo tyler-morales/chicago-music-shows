@@ -13,10 +13,15 @@
   </header>
 
   <section aria-label="Filters">
-    <label for="venue-filter">Venue:</label>
-    <select id="venue-filter">
-      <option value="">All venues</option>
-    </select>
+    <div class="filter-group">
+      <label for="venue-filter">Venues:</label>
+      <select id="venue-filter" multiple size="8" aria-describedby="venue-filter-hint">
+      </select>
+      <p id="venue-filter-hint">
+        Select one or more venues (hold Cmd on Mac or Ctrl on Windows; tap to toggle on mobile).
+        Leave empty to show all venues.
+      </p>
+    </div>
 
     <label for="from-date">From date:</label>
     <input type="date" id="from-date">
@@ -54,6 +59,7 @@
     </p>
   </footer>
 
+  <script src="filter.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
