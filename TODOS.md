@@ -20,6 +20,7 @@
 | Done | Scraper window through end of next calendar year (at least 2027-12-31) |
 | Done | Songkick calendar pagination so listed 2027 dates can be scraped |
 | Done | Unit tests for `end_date_for_window` and 2027 merge include/exclude |
+| Done | Refreshed `data/shows.json`: 1210 → 2260 shows; 0 → 200 dated 2027 |
 
 ## Next
 

@@ -1,5 +1,5 @@
 {
-  "last_updated": "2026-09-14T09:46:01Z",
-  "show_count": 1210,
-  "note": "Best-effort incomplete aggregator scrape; not exhaustive."
+  "last_updated": "2026-09-14T11:43:56Z",
+  "show_count": 2260,
+  "note": "Best-effort incomplete aggregator scrape; not exhaustive. Merged 2044 scraped candidates into 2260 shows (window 2026-09-14\u20132027-12-31; parse_errors=0)."
 }
